@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>Yuko Vape — Commander</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --gold: #c9a84c; --gold-light: #e8c97a;
+      --bg: #0f0f0f; --card: #1a1a1a; --card2: #222;
+      --border: rgba(201,168,76,0.2); --text: #f0f0f0; --muted: #888;
+      --green: #2ecc71; --red: #e74c3c;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, 'Segoe UI', sans-serif; min-height: 100vh; padding-bottom: 100px; }
+
+    /* HEADER */
+    .header { background: var(--card); border-bottom: 1px solid var(--border); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+    .header-logo { font-size: 1.2rem; font-weight: 800; letter-spacing: 2px; color: var(--gold); }
+    .cart-btn { position: relative; background: var(--card2); border: 1px solid var(--border); color: var(--text); padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .cart-badge { background: var(--gold); color: #000; border-radius: 50%; width: 18px; height: 18px; font-size: 0.65rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+
+    /* TABS */
+    .tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--border); overflow-x: auto; }
+    .tab { flex-shrink: 0; padding: 12px 20px; font-size: 0.82rem; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap; }
+    .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+    /* VIEWS */
+    .view { display: none; padding: 16px; }
+    .view.active { display: block; }
+
+    /* PRODUCT CARD */
+    .product-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
+    .product-img { width: 100%; height: 160px; object-fit: cover; background: var(--card2); display: flex; align-items: center; justify-content: center; font-size: 3rem; }
+    .product-body { padding: 16px; }
+    .product-name { font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .product-desc { font-size: 0.8rem; color: var(--muted); margin-bottom: 14px; }
+
+    /* TIERS */
+    .tiers { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .tier-btn { flex: 1; min-width: 80px; background: var(--card2); border: 1.5px solid var(--border); border-radius: 8px; padding: 10px 8px; text-align: center; cursor: pointer; transition: all 0.15s; }
+    .tier-btn.selected { border-color: var(--gold); background: rgba(201,168,76,0.1); }
+    .tier-qty { font-size: 0.75rem; color: var(--muted); }
+    .tier-price { font-size: 1rem; font-weight: 700; color: var(--gold); }
+
+    /* FLAVOR SELECT */
+    .flavor-label { font-size: 0.78rem; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+    .flavor-select { width: 100%; background: var(--card2); border: 1px solid var(--border); color: var(--text); padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 14px; outline: none; }
+
+    /* QTY */
+    .qty-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .qty-label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; flex: 1; }
+    .qty-controls { display: flex; align-items: center; gap: 10px; }
+    .qty-btn { width: 32px; height: 32px; border-radius: 50%; background: var(--card2); border: 1px solid var(--border); color: var(--text); font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .qty-val { font-size: 1rem; font-weight: 700; min-width: 30px; text-align: center; }
+
+    /* ADD BTN */
+    .add-btn { width: 100%; background: var(--gold); color: #000; border: none; border-radius: 8px; padding: 13px; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+    .add-btn:hover { background: var(--gold-light); }
+    .add-btn:disabled { background: #333; color: var(--muted); cursor: not-allowed; }
+
+    /* CART */
+    .cart-empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .cart-empty .icon { font-size: 3rem; margin-bottom: 12px; }
+    .cart-item { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .cart-item-info { flex: 1; }
+    .cart-item-name { font-weight: 600; font-size: 0.95rem; }
+    .cart-item-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+    .cart-item-price { font-weight: 700; color: var(--gold); font-size: 0.95rem; white-space: nowrap; }
+    .cart-remove { background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; padding: 4px; }
+    .cart-total { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin: 16px 0; display: flex; justify-content: space-between; align-items: center; }
+    .cart-total-label { font-size: 0.85rem; color: var(--muted); }
+    .cart-total-amount { font-size: 1.4rem; font-weight: 800; color: var(--gold); }
+    .min-warning { background: rgba(231,76,60,0.1); border: 1px solid rgba(231,76,60,0.3); color: #e74c3c; border-radius: 8px; padding: 10px 14px; font-size: 0.82rem; margin-bottom: 12px; }
+    .checkout-btn { width: 100%; background: var(--green); color: #fff; border: none; border-radius: 10px; padding: 15px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: opacity 0.2s; }
+    .checkout-btn:hover { opacity: 0.9; }
+    .checkout-btn:disabled { background: #333; color: var(--muted); cursor: not-allowed; }
+
+    /* CHECKOUT FORM */
+    .form-group { margin-bottom: 14px; }
+    .form-label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; display: block; }
+    .form-input { width: 100%; background: var(--card2); border: 1px solid var(--border); color: var(--text); padding: 12px 14px; border-radius: 8px; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+    .form-input:focus { border-color: var(--gold); }
+    .form-select { width: 100%; background: var(--card2); border: 1px solid var(--border); color: var(--text); padding: 12px 14px; border-radius: 8px; font-size: 0.95rem; outline: none; }
+    .order-summary { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .order-summary-title { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+    .order-line { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .order-line:last-child { border-bottom: none; }
+    .order-total-line { display: flex; justify-content: space-between; font-weight: 700; padding-top: 10px; margin-top: 4px; }
+    .order-total-line span:last-child { color: var(--gold); font-size: 1.1rem; }
+    .confirm-btn { width: 100%; background: var(--green); color: #fff; border: none; border-radius: 10px; padding: 15px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+    .back-btn { width: 100%; background: var(--card2); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 13px; font-size: 0.95rem; cursor: pointer; margin-bottom: 10px; }
+
+    /* SUCCESS */
+    .success-view { text-align: center; padding: 60px 20px; }
+    .success-icon { font-size: 4rem; margin-bottom: 20px; }
+    .success-title { font-size: 1.5rem; font-weight: 800; color: var(--green); margin-bottom: 10px; }
+    .success-sub { font-size: 0.9rem; color: var(--muted); line-height: 1.7; }
+
+    /* LOADER */
+    .loader { display: flex; justify-content: center; padding: 40px; }
+    .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* TOAST */
+    .toast { position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%); background: var(--card2); border: 1px solid var(--gold); color: var(--gold); padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">YUKO VAPE</div>
+  <button class="cart-btn" onclick="showCart()">
+    🛒 Panier
+    <span class="cart-badge" id="cartBadge">0</span>
+  </button>
+</div>
+
+<div class="tabs" id="tabsBar">
+  <div class="tab active" onclick="showView('catalogue')">Catalogue</div>
+  <div class="tab" onclick="showView('cart')">Panier</div>
+</div>
+
+<!-- CATALOGUE -->
+<div class="view active" id="view-catalogue">
+  <div class="loader"><div class="spinner"></div></div>
+</div>
+
+<!-- CART -->
+<div class="view" id="view-cart"></div>
+
+<!-- CHECKOUT -->
+<div class="view" id="view-checkout"></div>
+
+<!-- SUCCESS -->
+<div class="view" id="view-success">
+  <div class="success-view">
+    <div class="success-icon">✅</div>
+    <div class="success-title">Commande envoyée !</div>
+    <p class="success-sub">Votre commande a bien été transmise.<br/>Notre équipe vous contactera très rapidement sur Telegram ou par email.</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = ''; // Same origin
+  let products = [];
+  let cart = [];
+  // productStates[productId] = { selectedTier, flavor, qty }
+  let productStates = {};
+  let currentView = 'catalogue';
+
+  // Init Telegram WebApp
+  const tg = window.Telegram?.WebApp;
+  if (tg) { tg.ready(); tg.expand(); }
+
+  // ─── INIT ───
+  async function init() {
+    await loadProducts();
+  }
+
+  async function loadProducts() {
+    try {
+      const res = await fetch(`${API}/api/products`);
+      products = await res.json();
+      products.forEach(p => {
+        productStates[p.id] = {
+          selectedTier: p.tiers?.[0] || null,
+          flavor: p.flavors?.[0] || '',
+          qty: p.tiers?.[0]?.qty || 30
+        };
+      });
+      renderCatalogue();
+    } catch(e) {
+      document.getElementById('view-catalogue').innerHTML = '<p style="text-align:center;padding:40px;color:var(--muted)">Impossible de charger les produits.</p>';
+    }
+  }
+
+  // ─── VIEWS ───
+  function showView(name) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('view-' + name).classList.add('active');
+    const tabs = ['catalogue','cart'];
+    const idx = tabs.indexOf(name);
+    if (idx >= 0) document.querySelectorAll('.tab')[idx]?.classList.add('active');
+    currentView = name;
+    if (name === 'cart') renderCart();
+    if (name === 'checkout') renderCheckout();
+  }
+
+  function showCart() { showView('cart'); }
+
+  // ─── CATALOGUE ───
+  function renderCatalogue() {
+    const el = document.getElementById('view-catalogue');
+    if (!products.length) {
+      el.innerHTML = '<p style="text-align:center;padding:40px;color:var(--muted)">Aucun produit disponible pour le moment.</p>';
+      return;
+    }
+    el.innerHTML = products.map(p => renderProductCard(p)).join('');
+  }
+
+  function renderProductCard(p) {
+    const state = productStates[p.id];
+    const tiers = p.tiers || [];
+    const flavors = p.flavors || [];
+
+    const tiersHTML = tiers.map((t, i) => `
+      <div class="tier-btn ${state.selectedTier?.qty === t.qty ? 'selected' : ''}"
+           onclick="selectTier('${p.id}', ${i})">
+        <div class="tier-qty">${t.label}</div>
+        <div class="tier-price">${t.price.toFixed(2)}€</div>
+      </div>
+    `).join('');
+
+    const flavorsHTML = flavors.length ? `
+      <div class="flavor-label">Parfum</div>
+      <select class="flavor-select" onchange="selectFlavor('${p.id}', this.value)">
+        ${flavors.map(f => `<option value="${f}" ${state.flavor === f ? 'selected' : ''}>${f}</option>`).join('')}
+      </select>
+    ` : '';
+
+    const imgHTML = p.image_url
+      ? `<img src="${p.image_url}" style="width:100%;height:160px;object-fit:cover;" onerror="this.style.display='none'">`
+      : `<div class="product-img">📦</div>`;
+
+    return `
+      <div class="product-card" id="pcard-${p.id}">
+        ${imgHTML}
+        <div class="product-body">
+          <div class="product-name">${p.name}</div>
+          ${p.description ? `<div class="product-desc">${p.description}</div>` : ''}
+          <div class="tiers">${tiersHTML}</div>
+          ${flavorsHTML}
+          <div class="qty-row">
+            <div class="qty-label">Quantité</div>
+            <div class="qty-controls">
+              <button class="qty-btn" onclick="changeQty('${p.id}', -10)">−</button>
+              <div class="qty-val" id="qty-${p.id}">${state.qty}</div>
+              <button class="qty-btn" onclick="changeQty('${p.id}', 10)">+</button>
+            </div>
+          </div>
+          <button class="add-btn" onclick="addToCart('${p.id}')">
+            Ajouter au panier
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  function selectTier(productId, tierIndex) {
+    const p = products.find(x => x.id === productId);
+    if (!p) return;
+    const tier = p.tiers[tierIndex];
+    productStates[productId].selectedTier = tier;
+    productStates[productId].qty = tier.qty;
+    // Re-render just this card
+    const card = document.getElementById('pcard-' + productId);
+    card.outerHTML = renderProductCard(p);
+  }
+
+  function selectFlavor(productId, flavor) {
+    productStates[productId].flavor = flavor;
+  }
+
+  function changeQty(productId, delta) {
+    const state = productStates[productId];
+    const minQty = state.selectedTier?.qty || 10;
+    state.qty = Math.max(minQty, state.qty + delta);
+    document.getElementById('qty-' + productId).textContent = state.qty;
+    // Update tier selection based on qty
+    const p = products.find(x => x.id === productId);
+    if (p) {
+      let bestTier = p.tiers[0];
+      for (const t of p.tiers) { if (state.qty >= t.qty) bestTier = t; }
+      state.selectedTier = bestTier;
+    }
+  }
+
+  function addToCart(productId) {
+    const p = products.find(x => x.id === productId);
+    const state = productStates[productId];
+    if (!state.selectedTier) return;
+    if (!state.flavor && p.flavors?.length) { showToast('⚠️ Choisissez un parfum'); return; }
+
+    // Find best tier price for qty
+    let bestTier = p.tiers[0];
+    for (const t of p.tiers) { if (state.qty >= t.qty) bestTier = t; }
+
+    const item = {
+      product_id: p.id,
+      product_name: p.name,
+      flavor: state.flavor,
+      qty: state.qty,
+      unit_price: bestTier.price,
+      total: state.qty * bestTier.price
+    };
+
+    // Check if same product+flavor already in cart
+    const existing = cart.find(c => c.product_id === p.id && c.flavor === state.flavor);
+    if (existing) {
+      existing.qty += state.qty;
+      existing.total = existing.qty * bestTier.price;
+    } else {
+      cart.push(item);
+    }
+
+    updateCartBadge();
+    showToast(`✅ Ajouté : ${p.name} × ${state.qty}`);
+  }
+
+  // ─── CART ───
+  function updateCartBadge() {
+    const total = cart.reduce((s, i) => s + i.qty, 0);
+    document.getElementById('cartBadge').textContent = total;
+  }
+
+  function getCartTotal() {
+    return cart.reduce((s, i) => s + i.total, 0);
+  }
+
+  function getTotalQty() {
+    return cart.reduce((s, i) => s + i.qty, 0);
+  }
+
+  function renderCart() {
+    const el = document.getElementById('view-cart');
+    if (!cart.length) {
+      el.innerHTML = `
+        <div class="cart-empty">
+          <div class="icon">🛒</div>
+          <p>Votre panier est vide</p>
+          <p style="font-size:0.8rem;margin-top:8px">Ajoutez des produits depuis le catalogue</p>
+        </div>`;
+      return;
+    }
+
+    const totalQty = getTotalQty();
+    const minOk = totalQty >= 30;
+    const warningHTML = !minOk ? `<div class="min-warning">⚠️ Minimum 30 pièces requis (${totalQty}/30 pcs)</div>` : '';
+
+    el.innerHTML = `
+      ${cart.map((item, i) => `
+        <div class="cart-item">
+          <div class="cart-item-info">
+            <div class="cart-item-name">${item.product_name}</div>
+            <div class="cart-item-sub">${item.flavor} · ${item.qty} pcs × ${item.unit_price.toFixed(2)}€</div>
+          </div>
+          <div class="cart-item-price">${item.total.toFixed(2)}€</div>
+          <button class="cart-remove" onclick="removeFromCart(${i})">✕</button>
+        </div>
+      `).join('')}
+      <div class="cart-total">
+        <div>
+          <div class="cart-total-label">Total estimé</div>
+          <div style="font-size:0.8rem;color:var(--muted)">${totalQty} pièces</div>
+        </div>
+        <div class="cart-total-amount">${getCartTotal().toFixed(2)}€</div>
+      </div>
+      ${warningHTML}
+      <button class="checkout-btn" onclick="showView('checkout')" ${!minOk ? 'disabled' : ''}>
+        Commander →
+      </button>
+    `;
+  }
+
+  function removeFromCart(index) {
+    cart.splice(index, 1);
+    updateCartBadge();
+    renderCart();
+  }
+
+  // ─── CHECKOUT ───
+  function renderCheckout() {
+    const el = document.getElementById('view-checkout');
+    el.innerHTML = `
+      <button class="back-btn" onclick="showView('cart')">← Retour au panier</button>
+      <div class="order-summary">
+        <div class="order-summary-title">Récapitulatif</div>
+        ${cart.map(item => `
+          <div class="order-line">
+            <span>${item.product_name} — ${item.flavor}</span>
+            <span>${item.qty} pcs</span>
+          </div>
+        `).join('')}
+        <div class="order-total-line">
+          <span>Total</span>
+          <span>${getCartTotal().toFixed(2)}€</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Votre nom / société *</label>
+        <input class="form-input" id="f-name" placeholder="ex: Jean Dupont" required/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Telegram ou Email *</label>
+        <input class="form-input" id="f-contact" placeholder="@votretelegram ou email"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Pays de livraison</label>
+        <select class="form-select" id="f-country">
+          <option value="France">🇫🇷 France</option>
+          <option value="Belgique">🇧🇪 Belgique</option>
+          <option value="Suisse">🇨🇭 Suisse</option>
+          <option value="Luxembourg">🇱🇺 Luxembourg</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes (optionnel)</label>
+        <textarea class="form-input" id="f-notes" rows="3" placeholder="Informations complémentaires..."></textarea>
+      </div>
+      <button class="confirm-btn" onclick="submitOrder()">✅ Confirmer la commande</button>
+    `;
+  }
+
+  async function submitOrder() {
+    const name = document.getElementById('f-name')?.value?.trim();
+    const contact = document.getElementById('f-contact')?.value?.trim();
+    const country = document.getElementById('f-country')?.value;
+    const notes = document.getElementById('f-notes')?.value?.trim();
+
+    if (!name || !contact) { showToast('⚠️ Remplissez tous les champs'); return; }
+
+    const btn = document.querySelector('.confirm-btn');
+    btn.disabled = true;
+    btn.textContent = 'Envoi en cours...';
+
+    try {
+      const res = await fetch(`${API}/api/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer_name: name,
+          customer_contact: contact,
+          country,
+          items: cart,
+          total: getCartTotal(),
+          notes
+        })
+      });
+
+      if (!res.ok) throw new Error();
+      cart = [];
+      updateCartBadge();
+      showView('success');
+      if (tg) tg.close();
+    } catch(e) {
+      btn.disabled = false;
+      btn.textContent = '✅ Confirmer la commande';
+      showToast('❌ Erreur, réessayez');
+    }
+  }
+
+  // ─── TOAST ───
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  init();
+</script>
+</body>
+</html>

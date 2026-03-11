@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin — Yuko Vape</title>
+  <style>
+    :root { --gold:#c9a84c;--gold-light:#e8c97a;--bg:#0a0a0a;--card:#161616;--card2:#1e1e1e;--border:rgba(201,168,76,0.2);--text:#f0f0f0;--muted:#888;--green:#2ecc71;--red:#e74c3c; }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI',sans-serif;min-height:100vh;}
+
+    /* LOGIN */
+    .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+    .login-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:40px;width:100%;max-width:380px;text-align:center;}
+    .login-logo{font-size:1.6rem;font-weight:800;letter-spacing:3px;color:var(--gold);margin-bottom:8px;}
+    .login-sub{font-size:0.85rem;color:var(--muted);margin-bottom:28px;}
+    .login-input{width:100%;background:var(--card2);border:1px solid var(--border);color:var(--text);padding:13px 16px;border-radius:8px;font-size:1rem;outline:none;margin-bottom:14px;}
+    .login-btn{width:100%;background:var(--gold);color:#000;border:none;border-radius:8px;padding:14px;font-size:1rem;font-weight:700;cursor:pointer;}
+    .login-btn:hover{background:var(--gold-light);}
+    .login-error{color:var(--red);font-size:0.85rem;margin-top:10px;}
+
+    /* LAYOUT */
+    .app{display:none;}
+    .sidebar{position:fixed;top:0;left:0;bottom:0;width:220px;background:var(--card);border-right:1px solid var(--border);padding:24px 0;z-index:10;}
+    .sidebar-logo{font-size:1.1rem;font-weight:800;letter-spacing:2px;color:var(--gold);padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:12px;}
+    .sidebar-logo span{display:block;font-size:0.65rem;color:var(--muted);letter-spacing:1px;font-weight:400;margin-top:2px;}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:11px 20px;color:var(--muted);font-size:0.88rem;cursor:pointer;transition:all 0.15s;border-left:2px solid transparent;}
+    .nav-item:hover{color:var(--text);background:rgba(255,255,255,0.03);}
+    .nav-item.active{color:var(--gold);border-left-color:var(--gold);background:rgba(201,168,76,0.05);}
+    .logout-btn{position:absolute;bottom:20px;left:0;right:0;padding:0 20px;}
+    .logout-btn button{width:100%;background:none;border:1px solid var(--border);color:var(--muted);padding:10px;border-radius:6px;cursor:pointer;font-size:0.85rem;}
+    .logout-btn button:hover{color:var(--red);border-color:var(--red);}
+    .main{margin-left:220px;padding:32px;min-height:100vh;}
+    .page-title{font-size:1.5rem;font-weight:800;margin-bottom:4px;}
+    .page-sub{font-size:0.85rem;color:var(--muted);margin-bottom:28px;}
+    .panel{display:none;}.panel.active{display:block;}
+
+    /* CARDS */
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:28px;}
+    .stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;}
+    .stat-val{font-size:1.8rem;font-weight:800;color:var(--gold);}
+    .stat-lbl{font-size:0.78rem;color:var(--muted);margin-top:4px;}
+
+    /* TABLE */
+    .table-wrap{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+    table{width:100%;border-collapse:collapse;}
+    th{background:var(--card2);padding:12px 16px;text-align:left;font-size:0.75rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border);}
+    td{padding:12px 16px;font-size:0.88rem;border-bottom:1px solid rgba(255,255,255,0.04);}
+    tr:last-child td{border-bottom:none;}
+    tr:hover td{background:rgba(255,255,255,0.02);}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:600;}
+    .badge-new{background:rgba(46,204,113,0.15);color:var(--green);}
+    .badge-paid{background:rgba(201,168,76,0.15);color:var(--gold);}
+    .badge-shipped{background:rgba(52,152,219,0.15);color:#3498db;}
+    .badge-done{background:rgba(127,140,141,0.15);color:#7f8c8d;}
+
+    /* BUTTONS */
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:6px;font-size:0.85rem;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;}
+    .btn-gold{background:var(--gold);color:#000;}.btn-gold:hover{background:var(--gold-light);}
+    .btn-outline{background:none;border:1px solid var(--border);color:var(--text);}.btn-outline:hover{border-color:var(--gold);color:var(--gold);}
+    .btn-red{background:rgba(231,76,60,0.15);border:1px solid rgba(231,76,60,0.3);color:var(--red);}.btn-red:hover{background:rgba(231,76,60,0.25);}
+    .btn-sm{padding:6px 12px;font-size:0.78rem;}
+
+    /* MODAL */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity 0.2s;}
+    .modal-overlay.open{opacity:1;pointer-events:all;}
+    .modal{background:var(--card);border:1px solid var(--border);border-radius:12px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;}
+    .modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+    .modal-title{font-size:1rem;font-weight:700;}
+    .modal-close{background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;}
+    .modal-body{padding:24px;}
+    .modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;}
+    .form-group{margin-bottom:16px;}
+    label{display:block;font-size:0.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+    input,textarea,select{width:100%;background:var(--card2);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:7px;font-size:0.9rem;outline:none;font-family:inherit;}
+    input:focus,textarea:focus{border-color:var(--gold);}
+    textarea{min-height:80px;resize:vertical;}
+
+    /* TIERS EDITOR */
+    .tier-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;margin-bottom:8px;}
+    .tier-row input{margin:0;}
+    .add-tier-btn{background:none;border:1px dashed var(--border);color:var(--muted);padding:8px;border-radius:6px;cursor:pointer;font-size:0.82rem;width:100%;margin-top:4px;}
+    .add-tier-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+    /* FLAVORS */
+    .flavor-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+    .flavor-tag{background:var(--card2);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:20px;font-size:0.78rem;display:flex;align-items:center;gap:6px;}
+    .flavor-tag button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.85rem;line-height:1;}
+    .flavor-tag button:hover{color:var(--red);}
+    .flavor-add-row{display:flex;gap:8px;}
+    .flavor-add-row input{flex:1;margin:0;}
+
+    /* TOGGLE */
+    .toggle{position:relative;display:inline-block;width:40px;height:22px;}
+    .toggle input{opacity:0;width:0;height:0;}
+    .toggle-slider{position:absolute;inset:0;background:#333;border-radius:11px;cursor:pointer;transition:0.3s;}
+    .toggle-slider:before{content:'';position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:white;border-radius:50%;transition:0.3s;}
+    .toggle input:checked + .toggle-slider{background:var(--green);}
+    .toggle input:checked + .toggle-slider:before{transform:translateX(18px);}
+
+    .section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+    .empty-state{text-align:center;padding:48px;color:var(--muted);}
+    .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+    .product-admin-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+    .product-admin-img{height:120px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:2.5rem;}
+    .product-admin-img img{width:100%;height:100%;object-fit:cover;}
+    .product-admin-body{padding:16px;}
+    .product-admin-name{font-weight:700;margin-bottom:4px;}
+    .product-admin-meta{font-size:0.78rem;color:var(--muted);margin-bottom:12px;}
+    .product-admin-actions{display:flex;gap:8px;}
+    .status-select{background:var(--card2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:5px;font-size:0.78rem;cursor:pointer;}
+
+    @media(max-width:768px){
+      .sidebar{width:100%;height:auto;position:relative;border-right:none;border-bottom:1px solid var(--border);}
+      .main{margin-left:0;}
+      .logout-btn{position:relative;bottom:auto;padding:12px 20px 0;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <div class="login-logo">YUKO VAPE<span>PANNEAU ADMIN</span></div>
+    <input class="login-input" type="password" id="loginPass" placeholder="Mot de passe admin" onkeydown="if(event.key==='Enter')login()"/>
+    <button class="login-btn" onclick="login()">Accéder →</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <div class="sidebar">
+    <div class="sidebar-logo">YUKO VAPE<span>ADMIN PANEL</span></div>
+    <div class="nav-item active" onclick="showPanel('dashboard')">📊 Dashboard</div>
+    <div class="nav-item" onclick="showPanel('products')">📦 Produits</div>
+    <div class="nav-item" onclick="showPanel('orders')">🛒 Commandes</div>
+    <div class="logout-btn">
+      <button onclick="logout()">Déconnexion</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- DASHBOARD -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">Vue d'ensemble de votre activité</div>
+      <div class="stats-grid" id="dashStats"></div>
+      <div class="page-title" style="font-size:1.1rem;margin-bottom:12px;">Dernières commandes</div>
+      <div class="table-wrap" id="dashOrders"></div>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div class="panel" id="panel-products">
+      <div class="section-header">
+        <div>
+          <div class="page-title">Produits</div>
+          <div class="page-sub">Gérez votre catalogue</div>
+        </div>
+        <button class="btn btn-gold" onclick="openProductModal()">+ Ajouter un produit</button>
+      </div>
+      <div class="product-grid" id="productGrid"></div>
+    </div>
+
+    <!-- ORDERS -->
+    <div class="panel" id="panel-orders">
+      <div class="page-title">Commandes</div>
+      <div class="page-sub">Toutes les commandes reçues</div>
+      <div class="table-wrap" id="ordersTable"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCT MODAL -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Nouveau produit</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editProductId"/>
+      <div class="form-group">
+        <label>Nom du produit *</label>
+        <input id="pName" placeholder="ex: Razz Bar 30K"/>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input id="pDesc" placeholder="ex: Top ventes - 30 000 Puffs"/>
+      </div>
+      <div class="form-group">
+        <label>URL image (optionnel)</label>
+        <input id="pImg" placeholder="https://..."/>
+      </div>
+      <div class="form-group">
+        <label>Paliers de prix</label>
+        <div id="tiersContainer"></div>
+        <button class="add-tier-btn" onclick="addTierRow()">+ Ajouter un palier</button>
+      </div>
+      <div class="form-group">
+        <label>Parfums</label>
+        <div class="flavor-tags" id="flavorTags"></div>
+        <div class="flavor-add-row">
+          <input id="newFlavor" placeholder="Ajouter un parfum" onkeydown="if(event.key==='Enter'){addFlavor();event.preventDefault();}"/>
+          <button class="btn btn-outline" onclick="addFlavor()">+</button>
+        </div>
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:12px;">
+        <label style="margin:0">Produit actif</label>
+        <label class="toggle">
+          <input type="checkbox" id="pActive" checked/>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-gold" onclick="saveProduct()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ORDER DETAIL MODAL -->
+<div class="modal-overlay" id="orderModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="orderModalTitle">Commande</div>
+      <button class="modal-close" onclick="document.getElementById('orderModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body" id="orderModalBody"></div>
+  </div>
+</div>
+
+<script>
+  const API = '';
+  let authToken = null;
+  let products = [];
+  let orders = [];
+  let tiers = [];
+  let flavors = [];
+  let editingProductId = null;
+
+  // ─── AUTH ───
+  async function login() {
+    const pass = document.getElementById('loginPass').value;
+    const res = await fetch(`${API}/api/admin/login`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ password: pass })
+    });
+    const data = await res.json();
+    if (data.success) {
+      authToken = data.token;
+      localStorage.setItem('yk_admin_token', authToken);
+      document.getElementById('loginWrap').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      loadAll();
+    } else {
+      document.getElementById('loginError').textContent = 'Mot de passe incorrect';
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem('yk_admin_token');
+    location.reload();
+  }
+
+  async function checkAutoLogin() {
+    const token = localStorage.getItem('yk_admin_token');
+    if (!token) return;
+    const res = await fetch(`${API}/api/admin/verify`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ token })
+    });
+    const data = await res.json();
+    if (data.valid) {
+      authToken = token;
+      document.getElementById('loginWrap').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      loadAll();
+    }
+  }
+
+  // ─── PANELS ───
+  function showPanel(name) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    event.currentTarget.classList.add('active');
+    if (name === 'products') renderProducts();
+    if (name === 'orders') renderOrders();
+    if (name === 'dashboard') renderDashboard();
+  }
+
+  // ─── LOAD ───
+  async function loadAll() {
+    const [pRes, oRes] = await Promise.all([
+      fetch(`${API}/api/admin/products`),
+      fetch(`${API}/api/admin/orders`)
+    ]);
+    products = await pRes.json();
+    orders = await oRes.json();
+    renderDashboard();
+  }
+
+  // ─── DASHBOARD ───
+  function renderDashboard() {
+    const totalOrders = orders.length;
+    const newOrders = orders.filter(o => o.status === 'nouveau').length;
+    const revenue = orders.reduce((s, o) => s + parseFloat(o.total), 0);
+
+    document.getElementById('dashStats').innerHTML = `
+      <div class="stat-card"><div class="stat-val">${totalOrders}</div><div class="stat-lbl">Commandes totales</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--green)">${newOrders}</div><div class="stat-lbl">Nouvelles commandes</div></div>
+      <div class="stat-card"><div class="stat-val">${revenue.toFixed(0)}€</div><div class="stat-lbl">Chiffre d'affaires</div></div>
+      <div class="stat-card"><div class="stat-val">${products.length}</div><div class="stat-lbl">Produits actifs</div></div>
+    `;
+
+    const recent = orders.slice(0, 5);
+    document.getElementById('dashOrders').innerHTML = recent.length ? `
+      <table>
+        <thead><tr><th>#</th><th>Client</th><th>Pays</th><th>Total</th><th>Statut</th></tr></thead>
+        <tbody>${recent.map(o => `
+          <tr onclick="openOrder(${o.id})" style="cursor:pointer">
+            <td>#${o.id}</td>
+            <td>${o.customer_name}</td>
+            <td>${o.country || '—'}</td>
+            <td><strong>${parseFloat(o.total).toFixed(2)}€</strong></td>
+            <td><span class="badge badge-${o.status === 'nouveau' ? 'new' : o.status === 'payé' ? 'paid' : o.status === 'expédié' ? 'shipped' : 'done'}">${o.status}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    ` : '<div class="empty-state">Aucune commande pour le moment</div>';
+  }
+
+  // ─── PRODUCTS ───
+  function renderProducts() {
+    const grid = document.getElementById('productGrid');
+    if (!products.length) { grid.innerHTML = '<div class="empty-state">Aucun produit. Ajoutez-en un !</div>'; return; }
+    grid.innerHTML = products.map(p => `
+      <div class="product-admin-card">
+        <div class="product-admin-img">${p.image_url ? `<img src="${p.image_url}" onerror="this.parentElement.innerHTML='📦'">` : '📦'}</div>
+        <div class="product-admin-body">
+          <div class="product-admin-name">${p.name}</div>
+          <div class="product-admin-meta">
+            ${(p.tiers||[]).map(t => `${t.label}: ${t.price}€`).join(' · ')}<br/>
+            ${(p.flavors||[]).length} parfum(s) · ${p.active ? '✅ Actif' : '⏸ Inactif'}
+          </div>
+          <div class="product-admin-actions">
+            <button class="btn btn-outline btn-sm" onclick="openProductModal('${p.id}')">✏️ Modifier</button>
+            <button class="btn btn-red btn-sm" onclick="deleteProduct('${p.id}')">🗑</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function openProductModal(productId) {
+    editingProductId = productId || null;
+    tiers = [];
+    flavors = [];
+    const p = productId ? products.find(x => x.id === productId) : null;
+
+    document.getElementById('modalTitle').textContent = p ? 'Modifier le produit' : 'Nouveau produit';
+    document.getElementById('editProductId').value = productId || '';
+    document.getElementById('pName').value = p?.name || '';
+    document.getElementById('pDesc').value = p?.description || '';
+    document.getElementById('pImg').value = p?.image_url || '';
+    document.getElementById('pActive').checked = p ? p.active : true;
+
+    tiers = p?.tiers ? JSON.parse(JSON.stringify(p.tiers)) : [{ qty: 30, label: '30+ pcs', price: '' }];
+    flavors = p?.flavors ? [...p.flavors] : [];
+
+    renderTiers();
+    renderFlavors();
+    document.getElementById('productModal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('productModal').classList.remove('open');
+  }
+
+  function renderTiers() {
+    document.getElementById('tiersContainer').innerHTML = tiers.map((t, i) => `
+      <div class="tier-row">
+        <input placeholder="Label (ex: 30+ pcs)" value="${t.label}" oninput="tiers[${i}].label=this.value"/>
+        <input type="number" placeholder="Prix (€)" value="${t.price}" step="0.01" oninput="tiers[${i}].price=parseFloat(this.value)"/>
+        <button class="btn btn-red btn-sm" onclick="removeTier(${i})">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function addTierRow() {
+    tiers.push({ qty: tiers.length > 0 ? (tiers[tiers.length-1].qty||0) + 20 : 30, label: '', price: '' });
+    renderTiers();
+  }
+
+  function removeTier(i) {
+    tiers.splice(i, 1);
+    renderTiers();
+  }
+
+  function renderFlavors() {
+    document.getElementById('flavorTags').innerHTML = flavors.map((f, i) => `
+      <div class="flavor-tag">${f}<button onclick="removeFlavor(${i})">✕</button></div>
+    `).join('');
+  }
+
+  function addFlavor() {
+    const input = document.getElementById('newFlavor');
+    const val = input.value.trim();
+    if (val && !flavors.includes(val)) { flavors.push(val); renderFlavors(); input.value = ''; input.focus(); }
+  }
+
+  function removeFlavor(i) {
+    flavors.splice(i, 1);
+    renderFlavors();
+  }
+
+  async function saveProduct() {
+    const id = document.getElementById('editProductId').value;
+    const payload = {
+      name: document.getElementById('pName').value.trim(),
+      description: document.getElementById('pDesc').value.trim(),
+      image_url: document.getElementById('pImg').value.trim(),
+      tiers: tiers.map((t, i) => ({ qty: parseInt(t.label) || (i+1)*30, label: t.label, price: parseFloat(t.price) || 0 })),
+      flavors,
+      active: document.getElementById('pActive').checked
+    };
+    if (!payload.name) { alert('Le nom est requis'); return; }
+
+    const url = id ? `${API}/api/admin/products/${id}` : `${API}/api/admin/products`;
+    const method = id ? 'PUT' : 'POST';
+    const res = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    if (res.ok) {
+      await loadAll();
+      renderProducts();
+      closeModal();
+    } else {
+      alert('Erreur lors de la sauvegarde');
+    }
+  }
+
+  async function deleteProduct(id) {
+    if (!confirm('Supprimer ce produit ?')) return;
+    await fetch(`${API}/api/admin/products/${id}`, { method: 'DELETE' });
+    await loadAll();
+    renderProducts();
+  }
+
+  // ─── ORDERS ───
+  function renderOrders() {
+    const table = document.getElementById('ordersTable');
+    if (!orders.length) { table.innerHTML = '<div class="empty-state">Aucune commande pour le moment</div>'; return; }
+    table.innerHTML = `
+      <table>
+        <thead><tr><th>#</th><th>Client</th><th>Contact</th><th>Pays</th><th>Total</th><th>Statut</th><th>Date</th></tr></thead>
+        <tbody>${orders.map(o => `
+          <tr onclick="openOrder(${o.id})" style="cursor:pointer">
+            <td>#${o.id}</td>
+            <td>${o.customer_name}</td>
+            <td style="color:var(--muted)">${o.customer_contact}</td>
+            <td>${o.country || '—'}</td>
+            <td><strong>${parseFloat(o.total).toFixed(2)}€</strong></td>
+            <td>
+              <select class="status-select" onclick="event.stopPropagation()" onchange="updateStatus(${o.id},this.value)">
+                ${['nouveau','payé','expédié','terminé'].map(s => `<option ${o.status===s?'selected':''} value="${s}">${s}</option>`).join('')}
+              </select>
+            </td>
+            <td style="color:var(--muted);font-size:0.78rem">${new Date(o.created_at).toLocaleDateString('fr-FR')}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  async function updateStatus(id, status) {
+    await fetch(`${API}/api/admin/orders/${id}`, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ status })
+    });
+    const o = orders.find(x => x.id === id);
+    if (o) o.status = status;
+    renderDashboard();
+  }
+
+  function openOrder(id) {
+    const o = orders.find(x => x.id === id);
+    if (!o) return;
+    document.getElementById('orderModalTitle').textContent = `Commande #${o.id}`;
+    const items = o.items || [];
+    document.getElementById('orderModalBody').innerHTML = `
+      <p><strong>Client :</strong> ${o.customer_name}</p>
+      <p style="margin-top:6px"><strong>Contact :</strong> ${o.customer_contact}</p>
+      <p style="margin-top:6px"><strong>Pays :</strong> ${o.country || '—'}</p>
+      ${o.notes ? `<p style="margin-top:6px"><strong>Notes :</strong> ${o.notes}</p>` : ''}
+      <div style="margin:16px 0;border-top:1px solid var(--border);padding-top:16px">
+        <strong>Produits :</strong>
+        ${items.map(item => `
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.88rem">
+            <span>${item.product_name} — ${item.flavor}</span>
+            <span>${item.qty} pcs × ${item.unit_price}€ = <strong>${item.total.toFixed(2)}€</strong></span>
+          </div>`).join('')}
+        <div style="display:flex;justify-content:space-between;padding-top:12px;font-weight:700">
+          <span>TOTAL</span><span style="color:var(--gold);font-size:1.1rem">${parseFloat(o.total).toFixed(2)}€</span>
+        </div>
+      </div>
+    `;
+    document.getElementById('orderModal').classList.add('open');
+  }
+
+  // Close modals on overlay click
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+  });
+
+  checkAutoLogin();
+</script>
+</body>
+</html>
