@@ -1,0 +1,18 @@
+# ============================================
+# YUKO VAPE — Variables d'environnement
+# Colle ces valeurs dans Railway > Variables
+# ============================================
+
+# Telegram
+TELEGRAM_TOKEN=7984913416:AAF683wO58QKeMgrftG5cr99-1x-LS3cAPg
+VENDOR_CHAT_ID=7701909173
+
+# Supabase
+SUPABASE_URL=https://zeybjxxhshkskprtyivg.supabase.co
+SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpleWJqeHhoc2hrc2twcnR5aXZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNTkzNjIsImV4cCI6MjA4ODgzNTM2Mn0.baMZE5MugrBkvcNcXALDUUyl93s4SUGHGCmHycjF7bY
+
+# Admin panel (CHANGE CE MOT DE PASSE !)
+ADMIN_PASSWORD=yukovape2026
+
+# Port
+PORT=3000
